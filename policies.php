@@ -1,101 +1,116 @@
 <?php
-include_once 'includes/startup.php';
-include_once 'authenticate.php';
+	include_once 'includes/startup.php';
+	include_once 'authenticate.php';
 
-$user_id = current_user_id();
-$columns = policy_columns();
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $policy = isset($_POST['policy']) ? $_POST['policy'] : '';
-    if (in_array($policy, $columns, true)) {
-        $conn->Execute("UPDATE user_master SET `$policy` = 1 WHERE user_id = ?", array($user_id));
-        setMsg('Thank you. Your agreement has been recorded.', 'success');
-    } else {
-        setMsg('Please tick the checkbox to agree to the policy.');
-    }
-    header("location: policies.php");
-    exit();
-}
-
-$page = $conn->Execute("SELECT * FROM cms_master WHERE page_id = 9")->FetchRow();
-$policies = $conn->Execute("SELECT page_id, nav_title, page_title, page_content FROM cms_master WHERE is_policy = 1 ORDER BY sort_order, page_id")->GetRows();
-$agreed = $conn->Execute("SELECT " . implode(', ', $columns) . " FROM user_master WHERE user_id = ?", array($user_id))->FetchRow();
-
-$all_agreed = true;
-foreach ($policies as $policy) {
-    if (in_array($policy['nav_title'], $columns) && empty($agreed[$policy['nav_title']])) {
-        $all_agreed = false;
-    }
-}
-
-$success = getMsg('success');
-$error = getMsg('error');
-$active_page_id = 9;
-$page_title = $page['page_title'];
-include_once '_header.php';
-?>
+	$user_id=($_SESSION[SESSION_PREFIX.'USER_ID']);
+	$sql = "SELECT * FROM user_master WHERE user_id=".$user_id;
+	$execc = $conn->Execute($sql);
+	$user = $execc->FetchRow();
+	
+	$page_id=9;
+	
+	$_SESSION[SESSION_PREFIX.'pageViewed'][$page_id]="true";
+	
+	if(!$_SESSION[SESSION_PREFIX.'INDUCTION_COMPLETE'])
+	{
+		$status = induction_complete();
+		
+		if($status)
+		{
+			/* Show notification that with this page, his induction is complete */
+			echo "<script>alert('Wohoo! Induction is complete.');</script>";
+			/* This is temporary. We will use bootstrap notification */
+		}
+	}
+	//user_topics
+	$training = "SELECT * FROM cms_master WHERE page_id =".$page_id;
+	$execc = $conn->Execute($training);
+	$roww = $execc->FetchRow();
+	$shortcode = true;
+	
+	include_once '_header.php';
+	?>
 <section class="breadcrumb">
-    <div class="container">
-        <ul>
-            <li><a href="index.php">Home</a></li>
-            <li><a href="induction.php?page_id=1">Onboarding</a></li>
-            <li><?php echo h($page['nav_title']); ?></li>
-        </ul>
-    </div>
+	<div class="container">
+		<ul>
+			<li><a href="index.php">Home</a></li>
+			<li><a href="#">Induction</a></li>
+		</ul>
+	</div>
 </section>
-<section class="page-section">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-3">
-                <?php include 'includes/onboarding_nav.php'; ?>
-            </div>
-            <div class="col-md-9">
-                <div class="panel-card">
-                    <h2 class="page-heading"><?php echo h($page['page_title']); ?></h2>
-                    <?php if ($success) { ?>
-                        <div class="alert alert-success"><?php echo h($success); ?></div>
-                    <?php } ?>
-                    <?php if ($error) { ?>
-                        <div class="alert alert-danger"><?php echo h($error); ?></div>
-                    <?php } ?>
-                    <p>Open each policy, read it and click <strong>Agree</strong> at the end.</p>
-                    <ul class="policy-list">
-                        <?php foreach ($policies as $i => $policy) { $done = !empty($agreed[$policy['nav_title']]); ?>
-                            <li>
-                                <a class="fancybox" href="#<?php echo $i + 1; ?>"><?php echo h($policy['page_title']); ?></a>
-                                <span class="policy-status <?php echo $done ? 'done' : 'todo'; ?>">
-                                    <?php echo $done ? '<i class="fa fa-check-circle"></i> Agreed' : '<i class="fa fa-clock-o"></i> Pending'; ?>
-                                </span>
-                            </li>
-                        <?php } ?>
-                    </ul>
-
-                    <?php foreach ($policies as $i => $policy) {
-                        $content = local_content($policy['page_content']);
-                        if (!empty($agreed[$policy['nav_title']])) {
-                            // Replace the agree form with a confirmation
-                            $content = preg_replace('#<p id="[a-z_]+_form">.*?</p>#s', '', $content)
-                                . '<div class="alert alert-success"><i class="fa fa-check-circle"></i> You have agreed to this policy.</div>';
-                        } else {
-                            $content = preg_replace('#(<p id="[a-z_]+_form">.*?</p>)#s', '<form method="post" action="policies.php" class="policy-form">$1</form>', $content);
-                        }
-                        ?>
-                        <div id="<?php echo $i + 1; ?>" class="cms-content" style="display:none;">
-                            <?php echo $content; ?>
-                        </div>
-                    <?php } ?>
-
-                    <div class="step-nav">
-                        <a href="employee_documents.php" class="prevButton">Prev</a>
-                        <?php if ($all_agreed) { ?>
-                            <a href="induction.php?page_id=10" class="nextButton">Next</a>
-                        <?php } else { ?>
-                            <span class="pull-right text-muted">Agree to all policies to continue</span>
-                        <?php } ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<section class="courses-view">
+	<div class="container">
+		<div class="row">
+			<div class="col-md-3">
+				<div class="right-slide left">
+					<h3 class="colorBlue">Induction Process</h3>
+					<ul class="catagories-list cmsList">
+						<?php
+						
+					
+							$sql="select page_id,page_title,nav_title FROM cms_master WHERE is_policy=0 ORDER BY sort_order";
+							$exec = $conn->Execute($sql);
+							while($row = $exec->FetchRow())
+							{ ?>
+						
+						<li <?php if($row['page_id'] == $page_id) echo "class='active'"; ?>>	
+							<a <?php if(array_key_exists($row['page_id'],$_SESSION[SESSION_PREFIX.'pageViewed'])){print "class='listViewed'"; }print "class='notViewed'"; ?> <?php if($row['page_id'] == 7){ ?> href="employee_details.php"<?php }else if($row['page_id'] == 8){?> href="employee_documents.php" <?php }else if($row['page_id'] == 9){?> href="policies.php"<?php }else{?> href="induction.php?page_id=<?php print $row['page_id']; ?>" <?php } ?> ><?php print $row['nav_title']; ?></a>
+							
+						</li>
+						<?php
+							}
+							?>
+					
+					</ul>
+				</div>
+			</div>
+			<div class="col-md-9">
+				<div class="row">
+					<div class="col-sm-12 col-md-12 induction-right-side">
+						<center><h1 class="pageTitle"><?php print $roww['page_title']; ?></h1></center>
+						<div class="course-post">
+							<div class="info contentBg">
+								<div class="name"><?php print $roww['page_content']; ?>
+								<?php  $sql="select * FROM cms_master WHERE is_policy=1 ORDER BY sort_order";
+							$exec1 = $conn->Execute($sql);
+							$ctr = 1;
+							while($row1 = $exec1->FetchRow())
+							{ 
+						?>
+						<div id="<?php echo $ctr; ?>" style="display:none">
+						<form name="policy_<?php print $row1['page_id']; ?>" class="policy_form" role="form" method="post">
+						<?php if($user[$row1['nav_title']] == 1){ 
+						$row1['page_content'] = "<style>#".$row1['nav_title']."_form{display:none;}</style>".$row1['page_content'];
+						} 
+						print $row1['page_content']; ?>
+						<input type="hidden" name="page_id" value="<?php print $row1['page_id']; ?>" >
+						</form>
+						</div>
+							<?php $ctr++; } ?>
+							<p><a href="employee_documents.php" class="prevButton">Prev</a><a href="induction.php?page_id=10" class="nextButton">Next</a></p>
+								</div>
+							</div>	
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+	</div>
 </section>
-<?php include '_footer.php'; ?>
+<?php include '_footer.php';?>
+<script>
+$(document).ready(function () {
+	
+	$("#myBtn1").click(function(event){
+	  event.preventDefault();
+	});
+	$("#myBtn2").click(function(event){
+	  event.preventDefault();
+	});
+	$("#myBtn3").click(function(event){
+	  event.preventDefault();
+	});
+});
+</script>

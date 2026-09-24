@@ -1,35 +1,145 @@
 <?php
-$logged_in = current_user_id() > 0;
-$induction_done = !empty($_SESSION[SESSION_PREFIX . 'INDUCTION_COMPLETE']);
-$current_page = basename($_SERVER['SCRIPT_NAME']);
-?><!DOCTYPE html>
+require_once("includes/startup.php");
+$current_page = basename($_SERVER['PHP_SELF']);
+$index_page = "index.php";
+$a_tag ="";
+?>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Meta information -->
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?php echo isset($page_title) ? h($page_title) . ' | ' : ''; ?><?php echo SITE_NAME; ?></title>
-    <link rel="icon" href="images/Favicon.ico">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"><!-- Mobile Specific Metas -->
+    
+    <!-- Title -->
+    <title> SAPPHIRE INFO SOLUTIONS [P].LTD</title>
+    
+    <!-- favicon icon -->
+    <link rel="shortcut icon" href="images/logo/logo.png">
+    
+    <!-- CSS Stylesheet -->
+    <link href="css/bootstrap.css" rel="stylesheet"><!-- bootstrap css -->
+    <link href="css/owl.carousel.css" rel="stylesheet"><!-- carousel Slider -->
+    <link href="css/font-awesome.css" rel="stylesheet"><!-- font awesome -->
+    <link href="css/jquery.countdown.css" rel="stylesheet">
+    <link href="css/jquery.selectbox.css" rel="stylesheet"><!-- select box -->
+    <link href="css/jquery.fancybox.css" rel="stylesheet"><!-- select box -->
+    <link href="css/docs.css" rel="stylesheet"><!--  template structure css -->
+	<link rel="stylesheet" type="text/css" href="css/custom.css" />
+	 <link rel="stylesheet" href="css/normalize.css">
+     <link rel="stylesheet" href="css/main.css">
+	 <?php if(isset($shortcode) && $shortcode != ""){ ?>
+		<link rel="stylesheet" href="css/style.css">
+		<link rel="stylesheet" href="css/shortcodes.css">
+	 <?php } ?>
+	 <?php if(isset($skin) && $skin != ""){ ?>
+		<link rel="stylesheet" href="css/skin.css">
+	 <?php } ?>
+	 <?php if($datatable){ ?>
+		<link href="siteadmin/css/jquery.dataTables.css" rel="stylesheet">
+	<?php } ?>
+     <link rel="stylesheet" href="css/jquery.steps.css">
+    
+    <link href="https://fonts.googleapis.com/css?family=Arima+Madurai:100,200,300,400,500,700,800,900%7CPT+Roboto:100,100i,300,300i,400,400i,500,500i,700,700i,900,900i" rel="stylesheet">
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+
 </head>
-<body class="page-<?php echo h(pathinfo($current_page, PATHINFO_FILENAME)); ?>">
-<header class="site-header">
-    <div class="container">
-        <a class="site-logo" href="index.php"><img src="images/logo/logo.png" alt="Sapphire Info Solutions"></a>
-        <?php if ($logged_in) { ?>
-        <button type="button" class="nav-toggle" aria-label="Menu"><i class="fa fa-bars"></i></button>
-        <nav class="site-nav">
-            <a href="index.php" <?php if ($current_page == 'index.php') echo 'class="active"'; ?>>Home</a>
-            <a href="induction.php?page_id=1" <?php if (in_array($current_page, array('induction.php', 'landing.php', 'employee_details.php', 'employee_documents.php', 'policies.php'))) echo 'class="active"'; ?>>Onboarding</a>
-            <?php if ($induction_done) { ?>
-            <a href="index.php#section2">Training</a>
-            <?php } ?>
-            <span class="nav-user"><i class="fa fa-user-circle"></i> <?php echo h($_SESSION[SESSION_PREFIX . 'FIRST_NAME']); ?></span>
-            <a href="logout.php" class="nav-logout"><i class="fa fa-sign-out"></i> Logout</a>
-        </nav>
-        <?php } ?>
-    </div>
-</header>
-<main class="site-main">
+    
+<body onselectstart="return false" onpaste="return false;" onCopy="return false" onCut="return false" onDrag="return false" onContextmenu="return false">
+    <div class="wapper">
+    	<div id="loader-wrapper">
+			<div id="loader"></div>
+			<div class="loader-section section-left"></div>
+            <div class="loader-section section-right"></div> 
+		</div>
+    	<div class="quck-nav style2">
+            <!--<div class="contact-no"><a href="#"><i class="fa fa-map-marker"></i>Brooklyn, NY 10036, United States</a></div>-->
+            <div class="contact-no"><a href="#"><i class="fa fa-phone"></i>+91-161-5002086, 2443434 (IN)</a></div>
+            <div class="contact-no"><a href="mailto: $info@sapphireinfo.net"><i class="fa fa-envelope" aria-hidden="true"></i> info@sapphireinfo.net</a></div>
+            <div class="quck-right">
+                <div class="right-link"><a href="#"><i class="fa fa-phone"></i>(+44) 2030026314 (UK)</a></div>
+                <div class="right-link language-select">
+                    <a target="_blank" href="https://sapphireinfonet.wordpress.com/"></i>Blog</a>
+                </div>
+				<div class="right-link language-select">
+                    <a target="_blank" href="https://www.facebook.com/sapphireinfosolutions/"><i class="fa fa-facebook-official" aria-hidden="true"></i></a>
+                </div>
+				<div class="right-link language-select">
+                    <a target="_blank" href="https://in.linkedin.com/in/kawitansh-kevin-khanna-326b3b20"><i class="fa fa-linkedin-square" aria-hidden="true"></i></a>
+                </div>
+				
+				<?php
+				
+                    if(isset($_SESSION[SESSION_PREFIX.'USER_LOGIN'])  && $_SESSION[SESSION_PREFIX.'USER_LOGIN']!="")
+					{
+						?>
+						<div class="right-link"><a href="logout.php"><i class="fa fa-window-close"></i>Logout</a></div>
+						<?php
+					}
+					else
+					{
+						?>
+						<div class="right-link"><a href="login-register.php"><i class="fa  fa-user"></i>Login \ Regester</a></div>
+						<?php
+					}
+				?>
+                
+            </div>
+        </div>
+        <header id="header" class="style2">
+            <nav id="nav-main">
+                <div class="navbar navbar-inverse">
+                    <div class="navbar-header">
+                        <a href="index.php" class="navbar-brand"><img src="images/logo/logo.png" class="logoset" alt=""></a>
+                        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                    </div>                
+                    <div class="navbar-collapse collapse">
+					<?php
+								if($current_page == $index_page)
+								{
+									?>
+							    <ul class="nav navbar-nav">
+                                <li class="active sub-menu links">
+                                	<a href="#section1">Home </a>
+                                </li>
+                                <li class="links">
+								    <a href="#section2">Test</a>
+								</li>
+                                <li class="links">
+								    <a href="#section3">Contact Us</a>
+								</li>
+                            </ul>
+							<?php
+								}
+								else
+								{
+									
+								?>
+                            <ul class="nav navbar-nav">
+                                <li class="active sub-menu links">
+                                	<a href="index.php#section1">Home </a>
+                                </li>
+                                <li class="links">
+								    <a href="index.php#section2">Test</a>
+								</li>
+                                <li class="links">
+								    <a href="index.php#section3">Contact Us</a>
+								</li>
+                            </ul>
+							<?php
+							}
+									
+								?>
+                        </div>
+                </div>
+            </nav>
+        </header>

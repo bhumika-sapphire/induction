@@ -1,0 +1,151 @@
+.login-view .col-sm-6:last-child{border-left:none;}
+
+.logoset{
+margin-left: 74px;}
+
+.copyrightset{
+margin-left: 74px;
+margin-top: 40px;}
+
+.login-view .check-slide {
+    display: block;
+}
+.right-slide .catagorie-list {
+     padding: 0px 0 0px 0; 
+    margin-left: 0px;
+}
+.btn1{background-color:#007cc3;}
+.footerlogo{max-width: 80%}
+.loginlogoset{padding-top: 100px;margin: auto;}
+.loginlogoset img{margin: auto;}
+
+#fade {
+  display: none;
+  position: fixed;
+  top: 0%;
+  left: 0%;
+  width: 100%;
+  height: 100%;
+  background-color: black;
+  z-index: 1001;
+  -moz-opacity: 0.8;
+  opacity: .80;
+  filter: alpha(opacity=80);
+}
+
+#light {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: 600px;
+  max-height: 360px;
+  margin-left: -300px;
+  margin-top: -180px;
+  border: 2px solid #FFF;
+  background: #FFF;
+  z-index: 1002;
+  overflow: visible;
+}
+
+#boxclose {
+  float: right;
+  cursor: pointer;
+  color: #fff;
+  border: 1px solid #AEAEAE;
+  border-radius: 3px;
+  background: #222222;
+  font-size: 31px;
+  font-weight: bold;
+  display: inline-block;
+  line-height: 0px;
+  padding: 11px 3px;
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  z-index: 1002;
+  opacity: 0.9;
+}
+
+.boxclose:before {
+  content: "×";
+}
+
+#fade:hover ~ #boxclose {
+  display:none;
+}
+
+.test:hover ~ .test2 {
+  display: none;
+}
+
+#countdown {
+    position: absolute;
+    height: 100px;
+    transition: all 1s ease-in-out;
+    z-index: 10;
+	text-align: center;
+	width: 300px;
+	right:50px
+}
+.space{margin-top: 40px;}
+.tdd{padding: 4px;}
+.txt{color:#F5F5F5;}
+#audio{background: #0077c1;
+    width: 700px;margin-left:75px;}
+.chapter{padding-left: 300px;
+    padding-top: 55px;}
+	
+#employee_details input[type="file"], #employee_details input[type="date"]{
+		width:100%;
+		padding:13px;
+		margin:5px;
+		border:solid 1px #085182 !important;
+		background:#fff;
+}
+#employee_details input[type="text"]{
+		width:100%;
+		padding:13px;
+		margin:5px;
+		border:solid 1px #085182 !important;
+		background:#fff;
+}
+.listViewed, .pageTitle{ color:#81BF16 !important; }
+.pageTitle{ margin-top:10px; }
+.lineHeight li{ line-height:4em; }
+.courses-view{padding:0px;}
+.contentBg{background:#f7f7fb; border:solid 1px #085182 !important;}
+.colorBlue{color:#085182 !important;}
+.colorBlue:after{background:#085182 !important;}
+.notViewed{color:#fff !important;}
+.notViewed:hover{color:#81BF16 !important;}
+.fancybox-skin{padding:15px 50px !important;}
+.cmsList{background:#085182; padding-left:10px !important;}
+footer{margin-top:20px;}
+#employee_details label{font-family:'Roboto', sans-serif; padding-left:5px; margin-top:5px; margin-bottom:0px;}
+input[type="submit"], input[type="button"], button, .sc_button.sc_button_style_filled{
+	background:#085182 !important;
+}
+input[type="submit"]:hover, input[type="button"]:hover, button:hover, .sc_button.sc_button_style_filled:hover{
+	background:#81BF16 !important;
+}
+.teamDesc{font-size:14px; text-align:justify;}
+.sc_team_item .sc_team_item_info{padding:1.5em 0em;}
+
+.induction-right-side{min-height:700px;}
+.margin10{margin:10px;}
+.prevButton{float:left; margin:20px; background:#085182; color:#fff; padding:10px; border-radius:7px; position:absolute; bottom:25px;}
+.prevButton:hover{background:#81BF16; color:#fff;}
+.nextButton{float:right; margin:20px; background:#085182; color:#fff; padding:10px; border-radius:7px; position:absolute; bottom:25px; right:10px;}
+.nextButton:hover{background:#81BF16; color:#fff;}
+.courses-view .course-post .name{font-family:'Roboto', sans-serif; text-align:justify;}
+.active .listViewed{color:#fff !important; text-decoration:underline !important;}
+.contentBg{padding-bottom:50px;}
+.listOfHolidays th, .listOfHolidays td { border: 1px solid black; text-align:center;}
+.travelPolicy th, .travelPolicy td { border: 1px solid black; text-align:center;}
+.incrementPolicy th, .incrementPolicy td { border: 1px solid black; text-align:center; width:100%;}
+.incrementPolicy{width:100%;}
+.showBorder th, .showBorder td { border: 1px solid black; text-align:center;}
+.policySubmit{margin:10px; color:#fff; border-radius:10px;}
+.customMargin{margin-top:-175px;}
+.policyCheckbox{appearance:auto;}

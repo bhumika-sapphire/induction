@@ -1,196 +1,746 @@
 <?php
-
-function setMsg($msg, $type = 'error')
+function check_user_pass_reappear_btn_hide($user_id,$topic_id)
 {
-    $_SESSION[SESSION_PREFIX . 'MSG'][$type] = $msg;
+	$result = false;
+	global $conn;
+	$final_result = $conn->Execute("SELECT is_pass FROM user_final_test_master WHERE is_pass=1 and user_id=".$user_id." and topic_id=".$topic_id." ORDER By final_test_id DESC LIMIT 1");
+	if($final_result->RowCount()>0){
+		$result = true;
+		return $result;
+	}else
+	{
+		return $result;
+	}
 }
 
-function getMsg($type = 'error')
-{
-    if (!isset($_SESSION[SESSION_PREFIX . 'MSG'][$type])) {
-        return '';
-    }
-    $msg = $_SESSION[SESSION_PREFIX . 'MSG'][$type];
-    unset($_SESSION[SESSION_PREFIX . 'MSG'][$type]);
-    return $msg;
+
+function check_final_eligibility($user_id,$topic_id)
+{ 
+
+	global $conn;
+
+
+	$sql = "SELECT chapter_id FROM user_chapter_test_master WHERE user_id=$user_id AND is_pass=1";
+	$exec1 = $conn->Execute($sql);
+	$topics = array();
+	$id = 'Null';	
+	if($exec1->RowCount() >0)
+	{
+			while($row = $exec1->FetchRow())
+			{
+				$topics[] = $row['topic_id'];
+			}
+			if(!empty($topics))
+			{
+				$id = implode(",",$topics);
+			}
+	}
+
+
+
+	 $result = $conn->Execute("SELECT chapter_id FROM chapter_master cm WHERE cm.topic_id IN (SELECT ut.topic_id FROM user_topics ut, topic_master tm WHERE ut.topic_id=tm.topic_id AND tm.is_communication=0 AND ut.user_id=$user_id) AND cm.chapter_id NOT IN ($id)");
+
+	if($result->RowCount() == 0)
+	{
+		$hideshow = "SELECT final_test_id,test_date,is_pass FROM user_final_test_master where user_id=".$user_id." AND topic_id=".$topic_id;
+		$exec = $conn->Execute($hideshow);		
+		$pass="";
+
+
+		$topic_master = "SELECT file_test FROM topic_master WHERE topic_id=".$topic_id;
+		$exec1 = $conn->Execute($topic_master);	
+		$topic_data = $exec1->FetchRow();
+
+		if(isset($topic_data['file_test']) && $topic_data['file_test'] ==1)
+		{
+			return false;
+		}
+
+		if($exec->RowCount() > 0){
+			
+			while($test_data = $exec->FetchRow())
+			{
+				if($test_data['is_pass'] == 1)
+				{
+						$pass++;
+				}
+				
+				
+			}
+			if($pass == "")
+			{
+				$last_date_dif = "SELECT MAX(test_date) as last_date FROM user_final_test_master where user_id=".$user_id;
+				$date_exec = $conn->Execute($last_date_dif);
+				$test_data1 = $date_exec->FetchRow();
+				
+				$star=date('Y-m-d',strtotime($test_data1['last_date'])); 
+				$end=date("Y/m/d");
+
+				if(dateDiff($end,$star) >= 7)
+				{
+					return true;
+				}
+			}
+
+			
+		
+		}
+
+		
+		if($exec->RowCount() == 0)
+		{
+			return true;
+		}
+		else
+		{
+			$hideshow = "SELECT request_status FROM user_request where request_status='Approved' AND user_id=".$user_id." AND topic_id=".$topic_id;
+			$exec = $conn->Execute($hideshow);
+			if($exec->RowCount() > 0)
+			{
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
-function h($value)
-{
-    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
-}
 
-function str_prepare($value)
-{
-    return trim(strip_tags((string)$value));
-}
-
-function current_user_id()
-{
-    return isset($_SESSION[SESSION_PREFIX . 'USER_ID']) ? (int)$_SESSION[SESSION_PREFIX . 'USER_ID'] : 0;
-}
-
-function log_issue($message)
-{
-    global $conn;
-    $conn->AutoExecute(TABLE_PREFIX . 'security_log', array(
-        'user_id'   => current_user_id(),
-        'log_value' => substr($message, 0, 250),
-        'log_date'  => date('Y-m-d H:i:s'),
-    ), 'INSERT');
-    return true;
-}
-
-/* Marks the logged-in user's onboarding as finished */
-function induction_complete()
-{
-    global $conn;
-    $user_id = current_user_id();
-    if (!$user_id) {
-        return false;
-    }
-    $conn->Execute("UPDATE user_master SET induction_complete = 1 WHERE user_id = ?", array($user_id));
-    $_SESSION[SESSION_PREFIX . 'INDUCTION_COMPLETE'] = true;
-    return true;
-}
-
-function has_passed_final($user_id, $topic_id)
-{
-    global $conn;
-    $rs = $conn->Execute("SELECT final_test_id FROM user_final_test_master WHERE user_id = ? AND topic_id = ? AND is_pass = 1 LIMIT 1",
-        array((int)$user_id, (int)$topic_id));
-    return $rs->RowCount() > 0;
-}
-
-function final_attempt_count($user_id, $topic_id)
-{
-    global $conn;
-    $rs = $conn->Execute("SELECT COUNT(*) AS c FROM user_final_test_master WHERE user_id = ? AND topic_id = ?",
-        array((int)$user_id, (int)$topic_id));
-    $row = $rs->FetchRow();
-    return (int)$row['c'];
-}
-
-function approved_reappear_request($user_id, $topic_id)
-{
-    global $conn;
-    $rs = $conn->Execute("SELECT user_request_id FROM user_request WHERE user_id = ? AND topic_id = ? AND request_status = 'Approved' ORDER BY user_request_id DESC LIMIT 1",
-        array((int)$user_id, (int)$topic_id));
-    $row = $rs->FetchRow();
-    return $row ? (int)$row['user_request_id'] : 0;
-}
-
-/* Can the user start the final test for this topic right now? */
-function check_final_eligibility($user_id, $topic_id)
-{
-    global $conn;
-    $rs = $conn->Execute("SELECT user_topic_id FROM user_topics WHERE user_id = ? AND topic_id = ?", array((int)$user_id, (int)$topic_id));
-    if ($rs->RowCount() == 0 || has_passed_final($user_id, $topic_id)) {
-        return false;
-    }
-    if (final_attempt_count($user_id, $topic_id) == 0) {
-        return true;
-    }
-    return approved_reappear_request($user_id, $topic_id) > 0;
-}
-
-/* Has the user failed the final test (and not passed since), so a re-appear request makes sense? */
-function check_final_reappear($user_id, $topic_id = null)
-{
-    global $conn;
-    if ($topic_id === null) {
-        $rs = $conn->Execute("SELECT topic_id FROM user_final_test_master WHERE user_id = ? ORDER BY final_test_id DESC LIMIT 1", array((int)$user_id));
-        $row = $rs->FetchRow();
-        if (!$row) {
-            return false;
-        }
-        $topic_id = $row['topic_id'];
-    }
-    return final_attempt_count($user_id, $topic_id) > 0 && !has_passed_final($user_id, $topic_id);
-}
-
-/* Hide the "Request Re-Appear" button while a request is already pending */
-function check_user_pass_reappear_btn_hide($user_id, $topic_id)
-{
-    global $conn;
-    $rs = $conn->Execute("SELECT user_request_id FROM user_request WHERE user_id = ? AND topic_id = ? AND request_status = 'Pending'",
-        array((int)$user_id, (int)$topic_id));
-    return $rs->RowCount() > 0;
-}
-
-/* Topics with a practical file round unlock it once the final test is passed */
-function check_test_files($user_id, $topic_id)
-{
-    global $conn;
-    $rs = $conn->Execute("SELECT file_test FROM topic_master WHERE topic_id = ?", array((int)$topic_id));
-    $row = $rs->FetchRow();
-    return $row && $row['file_test'] == 1 && has_passed_final($user_id, $topic_id);
-}
-
-function latest_file_round($user_id, $topic_id = null)
-{
-    global $conn;
-    if ($topic_id === null) {
-        $rs = $conn->Execute("SELECT * FROM user_files_upload_master WHERE user_id = ? ORDER BY id DESC LIMIT 1", array((int)$user_id));
-    } else {
-        $rs = $conn->Execute("SELECT * FROM user_files_upload_master WHERE user_id = ? AND topic_id = ? ORDER BY id DESC LIMIT 1",
-            array((int)$user_id, (int)$topic_id));
-    }
-    return $rs->FetchRow();
-}
-
-/* True while the user may still download / upload files for this topic */
-function check_files_result($user_id, $topic_id)
-{
-    $row = latest_file_round($user_id, $topic_id);
-    if (!$row) {
-        return true;
-    }
-    if ($row['upload_date'] == '') {
-        return true;
-    }
-    return $row['is_pass'] !== null && $row['is_pass'] == 0 && $row['try_again'] == 1;
-}
-
-/* "pass", "fail" or "wait" for the user's latest uploaded file */
 function display_files_result($user_id)
 {
-    $row = latest_file_round($user_id);
-    if (!$row || $row['is_pass'] === null || $row['is_pass'] === '') {
-        return 'wait';
+
+		global $conn;
+
+	$file_result= "pending";
+	$file_result1 = "SELECT MAX(id) AS id FROM user_files_upload_master where user_id=".$user_id;
+		$exec1 = $conn->Execute($file_result1);
+		$result1 = $exec1->FetchRow();
+
+		if(isset($result1['id']) && $result1['id'] !="")
+		{
+		
+			$file_result = "SELECT is_pass,file_check_date FROM user_files_upload_master where id=".$result1['id'];
+			$exec = $conn->Execute($file_result);
+			$result = $exec->FetchRow();
+
+			if(isset($result['file_check_date']) && $result['file_check_date'] != "")
+			{
+					if(isset($result['is_pass']) && $result['is_pass'] == 1)
+					{
+						$file_result= "pass";
+						
+					}
+					else
+					{
+						$file_result= "fail";
+					}
+			}
+			
+		}
+return $file_result;
+}
+
+
+function check_files_result($user_id,$topic_id)
+{ 
+
+	global $conn;
+
+
+	$sql = "SELECT chapter_id FROM user_chapter_test_master WHERE user_id=$user_id AND is_pass=1";
+	$exec1 = $conn->Execute($sql);
+	$topics = array();
+	$id = 'Null';	
+	if($exec1->RowCount() >0)
+	{
+			while($row = $exec1->FetchRow())
+			{
+				$topics[] = $row['topic_id'];
+			}
+			if(!empty($topics))
+			{
+				$id = implode(",",$topics);
+			}
+	}
+
+
+
+	 $result = $conn->Execute("SELECT chapter_id FROM chapter_master cm WHERE cm.topic_id IN (SELECT ut.topic_id FROM user_topics ut, topic_master tm WHERE ut.topic_id=tm.topic_id AND tm.is_communication=0 AND ut.user_id=$user_id) AND cm.chapter_id NOT IN ($id)");
+
+	if($result->RowCount() == 0)
+	{
+		$file_result1 = "SELECT MAX(id) AS id FROM user_files_upload_master where user_id=".$user_id." AND topic_id=".$topic_id;
+		$exec1 = $conn->Execute($file_result1);
+		$result1 = $exec1->FetchRow();
+
+		if(isset($result1['id']) && $result1['id'] !="")
+		{
+		
+			$file_result = "SELECT is_pass AS pass,ROUND AS round,try_again AS try_again FROM user_files_upload_master where id=".$result1['id'];
+			
+			$exec = $conn->Execute($file_result);
+			$result = $exec->FetchRow();
+
+			if(isset($result['pass']) && $result['pass'] == 0 && $result['try_again'] == 1 && $result['round'] != 3)
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		
+
+
+		
+	}
+	return true;
+}
+
+function check_test_files($user_id,$topic_id)
+{ 
+
+	global $conn;
+
+
+	$sql = "SELECT chapter_id FROM user_chapter_test_master WHERE user_id=$user_id AND is_pass=1";
+	$exec1 = $conn->Execute($sql);
+	$topics = array();
+	$id = 'Null';	
+	if($exec1->RowCount() >0)
+	{
+			while($row = $exec1->FetchRow())
+			{
+				$topics[] = $row['topic_id'];
+			}
+			if(!empty($topics))
+			{
+				$id = implode(",",$topics);
+			}
+	}
+
+
+
+	 $result = $conn->Execute("SELECT chapter_id FROM chapter_master cm WHERE cm.topic_id IN (SELECT ut.topic_id FROM user_topics ut, topic_master tm WHERE ut.topic_id=tm.topic_id AND tm.is_communication=0 AND ut.user_id=$user_id) AND cm.chapter_id NOT IN ($id)");
+
+	if($result->RowCount() == 0)
+	{
+
+		$file_result1 = "SELECT MAX(final_test_id) AS id FROM user_final_test_master where user_id=".$user_id." AND is_pass=1 AND topic_id=".$topic_id;
+		$exec1 = $conn->Execute($file_result1);
+		$result1 = $exec1->FetchRow();
+
+		if(isset($result1['id']) && $result1['id'] =!"")
+		{
+			$hideshow = "SELECT final_test_id,test_date,is_pass FROM user_final_test_master where final_test_id=".$result1['id'];
+			$exec = $conn->Execute($hideshow);
+
+			
+
+			if($exec->RowCount() == 1)
+			{
+				
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+
+		$topic_master = "SELECT file_test FROM topic_master WHERE topic_id=".$topic_id;
+		$exec1 = $conn->Execute($topic_master);	
+		$topic_data = $exec1->FetchRow();
+
+		if(isset($topic_data['file_test']) && $topic_data['file_test'] ==1)
+		{
+			return true;
+		}
+		
+	}
+	return false;
+}
+
+function check_final_reappear($user_id,$topic_id)
+{
+
+	global $conn;
+
+	$sql = "SELECT chapter_id FROM user_chapter_test_master WHERE user_id=$user_id AND is_pass=1";
+	$exec1 = $conn->Execute($sql);
+	$topics = array();
+	$id = 'Null';	
+	if($exec1->RowCount() >0)
+	{
+			while($row = $exec1->FetchRow())
+			{
+				$topics[] = $row['topic_id'];
+			}
+			if(!empty($topics))
+			{
+				$id = implode(",",$topics);
+			}
+	}
+
+
+	$result = $conn->Execute("SELECT chapter_id FROM chapter_master cm WHERE cm.topic_id IN (SELECT ut.topic_id FROM user_topics ut,topic_master tm WHERE ut.topic_id=tm.topic_id AND tm.is_communication=0 AND ut.user_id=$user_id) AND cm.chapter_id NOT IN ($id)");
+	if($result->RowCount() == 0)
+	{
+		
+		$hideshow = "SELECT final_test_id FROM user_final_test_master where user_id=".$user_id." AND topic_id=".$topic_id;
+		$exec = $conn->Execute($hideshow);
+		
+		$hideshow = "SELECT request_status FROM user_request where request_status='Pending' AND user_id=".$user_id;
+		$exec1 = $conn->Execute($hideshow);
+		
+		if($exec->RowCount() > 0 && $exec1->RowCount() == 0)
+		{
+			
+			return true;
+			exit();
+		}
+	}
+		
+	return false;
+}
+
+function convertPrice($price)
+{
+		if($_SESSION["currency"]=="USD"){
+		$c_price = $_SESSION["currency"]." ".$price;
+		}
+		else{
+		$query = "select currency_value from currency_master where currency_symbol='".$_SESSION['currency']."'";
+			global $conn;
+			$result  = $conn->Execute($query);
+			$data = $result->FetchRow();
+			$c_price = $price * $data['currency_value'];
+			$c_price = $_SESSION["currency"]." ".$c_price;
+		}
+		return $c_price;
+}	//Set Message
+
+
+	function setMsg($str) {
+		$_SESSION[SESSION_PREFIX.'msg']=$str;
+	}
+	
+	//Print Message Array from session
+	function getMsg($cls='') {
+		$cls=trim($cls);
+		if(isset($_SESSION[SESSION_PREFIX.'msg'])) {
+			$tmp_msg=$_SESSION[SESSION_PREFIX.'msg'];
+			unset($_SESSION[SESSION_PREFIX.'msg']);
+			if(is_array($tmp_msg)) {
+				if($cls=='') {
+					print('<ul>');
+				}else {
+					print('<ul class="'.$cls.'">');					
+				}
+				foreach($tmp_msg as $tmp) {
+					print('<li>'.$tmp.'</li>');
+				}
+				print "</ul>";
+			}
+			else {
+				if($cls=='') {
+					print($tmp_msg);
+				} else {
+					print('<span class="'.$cls.'">'.$tmp_msg.'</span>');
+				}
+			}
+		}
+	}
+
+
+	//Remove XSS
+function RemoveXSS($val){ 
+   // remove all non-printable characters. CR(0a) and LF(0b) and TAB(9) are allowed 
+   // this prevents some character re-spacing such as <java\0script> 
+   // note that you have to handle splits with \n, \r, and \t later since they *are* allowed in some inputs 
+   $val = preg_replace('/([\x00-\x08][\x0b-\x0c][\x0e-\x20])/', '', $val); 
+   // straight replacements, the user should never need these since they're normal characters 
+   // this prevents like <IMG SRC=&#X40&#X61&#X76&#X61&#X73&#X63&#X72&#X69&#X70&#X74&#X3A&#X61&#X6C&#X65&#X72&#X74&#X28&#X27&#X58&#X53&#X53&#X27&#X29> 
+   $search = 'abcdefghijklmnopqrstuvwxyz'; 
+   $search .= 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+   $search .= '1234567890!@#$%^&*()'; 
+   $search .= '~`";:?+/={}[]-_|\'\\'; 
+
+   for ($i = 0; $i < strlen($search); $i++) { 
+      // ;? matches the ;, which is optional 
+      // 0{0,7} matches any padded zeros, which are optional and go up to 8 chars 
+      // &#x0040 @ search for the hex values 
+      $val = preg_replace('/(&#[x|X]0{0,8}'.dechex(ord($search[$i])).';?)/i', $search[$i], $val); // with a ; 
+      // &#00064 @ 0{0,7} matches '0' zero to seven times 
+      $val = preg_replace('/(&#0{0,8}'.ord($search[$i]).';?)/', $search[$i], $val); // with a ; 
+   } 
+
+   // now the only remaining whitespace attacks are \t, \n, and \r 
+   $ra1 = Array('javascript', 'vbscript', '<expression', '<applet', 'meta', '<xml', '<link', '<script', 'script>','&lt;script','script&gt;', '<embed', '<object', 'iframe', '<frame', 'frameset', 'ilayer', '<layer', 'bgsound', '<title'); 
+
+   $ra2 = Array('onabort', 'onactivate', 'onafterprint', 'onafterupdate', 'onbeforeactivate', 'onbeforecopy', 'onbeforecut', 'onbeforedeactivate', 'onbeforeeditfocus', 'onbeforepaste', 'onbeforeprint', 'onbeforeunload', 'onbeforeupdate', 'onblur', 'onbounce', 'oncellchange', 'onchange', 'onclick', 'oncontextmenu', 'oncontrolselect', 'oncopy', 'oncut', 'ondataavailable', 'ondatasetchanged', 'ondatasetcomplete', 'ondblclick', 'ondeactivate', 'ondrag', 'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'onerror', 'onerrorupdate', 'onfilterchange', 'onfinish', 'onfocus', 'onfocusin', 'onfocusout', 'onhelp', 'onkeydown', 'onkeypress', 'onkeyup', 'onlayoutcomplete', 'onload', 'onlosecapture', 'onmousedown', 'onmouseenter', 'onmouseleave', 'onmousemove', 'onmouseout', 'onmouseover', 'onmouseup', 'onmousewheel', 'onmove', 'onmoveend', 'onmovestart', 'onpaste', 'onpropertychange', 'onreadystatechange', 'onreset', 'onresize', 'onresizeend', 'onresizestart', 'onrowenter', 'onrowexit', 'onrowsdelete', 'onrowsinserted', 'onscroll', 'onselect', 'onselectionchange', 'onselectstart', 'onstart', 'onstop', 'onsubmit', 'onunload'); 
+
+   $ra = array_merge($ra1, $ra2); 
+   $found = true; // keep replacing as long as the previous round replaced something 
+   
+   while ($found == true) { 
+      $val_before = $val; 
+      for ($i = 0; $i < sizeof($ra); $i++) { 
+         $pattern = '/'; 
+         for ($j = 0; $j < strlen($ra[$i]); $j++) { 
+            if ($j > 0) { 
+               $pattern .= '('; 
+               $pattern .= '(&#[x|X]0{0,8}([9][a][b]);?)?'; 
+               $pattern .= '|(&#0{0,8}([9][10][13]);?)?'; 
+               $pattern .= ')?'; 
+            } 
+
+            $pattern .= $ra[$i][$j]; 
+         } 
+         $pattern .= '/i'; 
+         $replacement = substr($ra[$i], 0, 2).'<x>'.substr($ra[$i], 2); // add in <> to nerf the tag 
+//		print $val."  -  ";
+//		if(strtolower($val)!="description")
+			 $val = preg_replace($pattern, $replacement, $val); // filter out the hex tags 
+			 
+         if ($val_before == $val) { 
+            // no replacements were made, so exit the loop 
+            $found = false; 
+         } 
+      } 
+   } 
+
+   str_replace("desc<x>ription","description",$val);
+   return $val; 
+} 
+
+//Function to use before sending data to a query
+function str_prepare($string,$xss=false)
+{
+	$string=trim($string);
+	if(get_magic_quotes_gpc()) 
+	{
+		if(ini_get('magic_quotes_sybase'))
+		{
+			$string= str_replace("''", "'", $string);
+		}
+		else
+		{
+			$string = stripslashes($string);
+		}
+	}
+	if($xss)
+	{
+		$string=RemoveXSS($string);
+	}
+	$string=str_replace("\\r\\n","<br>",$string);
+	$string=str_replace("\r\n","<br>",$string);
+	//$string=mysql_real_escape_string($string);
+	return $string;
+}
+
+function output($string)
+{
+	print stripslashes(replace_newline(html_entity_decode($string,ENT_QUOTES)));
+}
+
+function replace_newline($string, $replace='') {
+	$order   = array("\\r\\n","\r\n","\n","\r");
+	$replace = '<br />';
+  return (string)str_replace($order, $replace, $string);
+}
+
+
+	//A substring function which maintain word boundaries
+	function smartSubstr($str,$len,$lines=0) {
+		$l=strlen($str);
+		$j=0;
+		$result='';
+		if($len<$l) {
+			for($i=$len;$i<$l;$i++) {
+				$tmp=$str[$i];
+				if($tmp==' ') {
+					break;
+				}
+				$j++;
+			}
+			$result=substr($str,0,($len+$j));
+		}else {
+			$result=$str;
+		}
+		if($lines>0) {
+			$arr=explode("\r\n",$result);
+			$lc=count($arr);
+			if($lines==1) {
+				$result=$arr[0];
+			}else {
+				$out='';
+				for($i=0;$i<$lines;$i++) {
+					if($i<$lc) {
+						//if(trim($arr[$i]) !='') {
+							$out.=$arr[$i]."\r\n";
+						//}
+					}else {
+						break;
+					}
+				}
+				$result=$out;
+			}
+		}
+		return $result;
+	}
+	
+	
+	//Translation function
+	function tl($var,$out=true) {
+		global $language;
+		if(isset($language[$var])) {
+			$output=$language[$var];
+		}else {
+			$output=$var;
+		}
+		if($out) {
+			print($output);
+		}else {
+			return $output;
+		}
+	}
+	
+	function debugMsg($msg) {
+		global $_debugMessages;
+		if(isset($msg)) {
+			$msg=trim($msg);
+			if($msg!='') {
+				$_debugMessages[]=$msg;
+			}
+		}
+	}
+
+	function microtime_float() {
+		list($usec, $sec) = explode(" ", microtime());
+		return ((float)$usec + (float)$sec);
+	}
+
+function dateDiff($endDate, $beginDate, $type='days')
+{
+	$endDate=strtotime($endDate);
+	$beginDate=strtotime($beginDate);
+	$diff=$endDate - $beginDate;
+
+	if($type=='days')
+		$div=60*60*24;
+	else if($type=='hours')
+		$div=60*60;
+	else if($type=='min')
+		$div=60;
+	else
+		$div=1;
+	$diff1=$diff/$div;
+	return $diff1;
+
+}
+
+
+	//Fetch config for a module from Database
+	function fetchDbConfig($confName) {
+		global $conn;
+		$result = $conn->Execute("SELECT array FROM ".TABLE_PREFIX."config WHERE cname = '$confName'");
+		if($result && $result->RecordCount()>0){
+			$base64Encoded = unserialize($result->fields['array']);
+			foreach($base64Encoded as $key => $value){
+				$decoded[base64_decode($key)] = stripslashes(base64_decode($value));
+			}
+			$clean=array();
+			foreach($decoded as $key => $value){
+				if(strcasecmp($value,'true')==0) {
+					$clean[$key]=true;
+					continue;
+				}
+				if(strcasecmp($value,'false')==0) {
+					$clean[$key]=false;
+					continue;
+				}
+				$clean[$key]=$value;
+			}
+			return $clean;
+		} else {
+			return FALSE;
+		}
+	}
+	
+	//Write config to Database
+	function writeDbConf($confName, $values) {
+		global $conn;
+		if (is_array($values)) {
+			if (count($values) < 1){
+				return false;
+			}
+			else {
+				// serialise the array for DB storage bas64 encode to stop serialize bug
+				foreach($values as $key => $value) {
+					$value = str_replace(array("\'","'"),"&#39;",$value);
+					$newConfigBase64[base64_encode($key)] = base64_encode($value);
+		
+				}
+				$configText = serialize($newConfigBase64);
+				// see if database config exists
+				$result = $conn->Execute("SELECT count(*) AS c FROM ".TABLE_PREFIX."config WHERE cname = '$confName'");
+				//$tmp=$result->fields;
+				if($result->fields['c']>0) {
+					$conn->AutoExecute(TABLE_PREFIX.'config',array('array'=>$configText),'UPDATE',"cname='$confName'",true,MAGIC_QUOTES);
+				} else {
+					$conn->AutoExecute(TABLE_PREFIX.'config',array('array'=>$configText),'INSERT',false,true,MAGIC_QUOTES);
+				}
+				return true;
+			}
+		}
+		else {
+			return false;
+		}
+	}
+
+// Generate a random password
+function generate_password($length = 8)
+{
+        $chars = 'abdefhiknrstyzABDEFGHKNQRSTYZ23456789';
+        $numChars = strlen($chars);
+ 
+        $string = '';
+        for ($i = 0; $i < $length; $i++) {
+            $string .= substr($chars, rand(1, $numChars) - 1, 1);
+        }
+        return $string;
+} 
+
+	function persons_age($BirthDate) {
+		if(isset($BirthDate)) {
+			list($year, $month, $day) = split('[-.]', $BirthDate);
+			$tmonth = date('n');
+			$tday = date('j');
+			$tyear = date('Y');
+			$years = $tyear - $year;
+			if ($tmonth <= $month)
+			{
+			  if ($month == $tmonth)
+			  {
+				  if ($day > $tday)
+					  $years--;
+			  }
+			  else
+				  $years--;
+			}
+		}
+		else {
+			$years='N.A';
+		}
+		return $years;
+	}
+	
+	function prep($str) {
+		return trim(htmlentities($str));
+	}
+
+
+function check_email_address($email) 
+{
+  // First, we check that there's one @ symbol, 
+  // and that the lengths are right.
+  if (!ereg("^[^@]{1,64}@[^@]{1,255}$", $email)) {
+    // Email invalid because wrong number of characters 
+    // in one section or wrong number of @ symbols.
+    return false;
+  }
+  // Split it into sections to make life easier
+  $email_array = explode("@", $email);
+  $local_array = explode(".", $email_array[0]);
+  for ($i = 0; $i < sizeof($local_array); $i++) {
+    if
+(!ereg("^(([A-Za-z0-9!#$%&'*+/=?^_`{|}~-][A-Za-z0-9!#$%&
+?'*+/=?^_`{|}~\.-]{0,63})|(\"[^(\\|\")]{0,62}\"))$",
+$local_array[$i])) {
+      return false;
     }
-    return $row['is_pass'] == 1 ? 'pass' : 'fail';
+  }
+  // Check if domain is IP. If not, 
+  // it should be valid domain name
+  if (!ereg("^\[?[0-9\.]+\]?$", $email_array[1])) {
+    $domain_array = explode(".", $email_array[1]);
+    if (sizeof($domain_array) < 2) {
+        return false; // Not enough parts to domain
+    }
+    for ($i = 0; $i < sizeof($domain_array); $i++) {
+      if
+(!ereg("^(([A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])|
+?([A-Za-z0-9]+))$",
+$domain_array[$i])) {
+        return false;
+      }
+    }
+  }
+  return true;
+} 
+
+function rgb2array($rgb) {
+    $r = base_convert(substr($rgb, 1, 2), 16, 10);
+	$g = base_convert(substr($rgb, 3, 2), 16, 10);
+	$b = base_convert(substr($rgb, 5, 2), 16, 10);
+
+	return array($r,$g,$b);
 }
 
-/* Policy columns on user_master, keyed by cms_master.nav_title */
-function policy_columns()
+function array_querystring($arr)
 {
-    return array('it_policy', 'leave_policy', 'list_of_holidays_policy', 'travel_policy', 'increment_policy',
-        'productivity_policy', 'office_rules_policy', 'referral_policy', 'posh_policy');
+	$qrystr="?";
+	$ctr = 1;
+	foreach($arr as $key=>$value)
+	{
+		if($ctr == 1)
+			$qrystr .= $key."=".$value;
+		else
+			$qrystr .= "&".$key."=".$value;
+		
+		$ctr++;
+	}
+	return $qrystr;
 }
 
-/* Onboarding pages 7-9 are interactive forms with their own scripts */
-function onboarding_step_url($page_id)
-{
-    $special = array(7 => 'employee_details.php', 8 => 'employee_documents.php', 9 => 'policies.php');
-    return isset($special[$page_id]) ? $special[$page_id] : 'induction.php?page_id=' . (int)$page_id;
+function log_issue($issue_log) {
+	global $conn;
+	$user_id = $_SESSION[SESSION_PREFIX.'USER_ID'];
+	$issue = array();
+	$issue["log_value"] = $issue_log;
+	$issue["user_id"] = $user_id;
+	$issue["log_date"] = date('Y-m-d H:i:s');
+     $issue_insert = $conn->Autoexecute("security_log",$issue, "INSERT", true, false, MAGIC_QUOTES);
 }
 
-function onboarding_steps()
-{
+function induction_complete() {
+
     global $conn;
-    $rs = $conn->Execute("SELECT page_id, nav_title FROM cms_master WHERE is_policy = 0 ORDER BY sort_order, page_id");
-    return $rs->GetRows();
+	$sql = "SELECT GROUP_CONCAT(page_id) as ids FROM cms_master ORDER BY page_id";
+	$res = $conn->Execute($sql);
+	$row = $res->FetchRow();
+	$keys = explode(",",$row['ids']);
+	
+	$complete = true;
+	
+    foreach ( $keys as $key ) {
+	
+        if ( !isset( $_SESSION[SESSION_PREFIX.'pageViewed'][$key] )) {
+            $complete = false;
+			break;
+        }
+    }
+	$_SESSION[SESSION_PREFIX.'INDUCTION_COMPLETE'] = $complete;
+	
+	if($complete)
+	{
+		$sql = "UPDATE user_master set induction_complete=1 WHERE user_id=".$_SESSION[SESSION_PREFIX.'USER_ID'];
+		$res = $conn->Execute($sql);
+	}
+	
+	return $complete;
+    
 }
 
-/*
- * Content saved in the admin panel embeds media from old live URLs
- * (the jobportal.sapphireinfo.net host no longer resolves). Serve those
- * files from this site's uploads folder instead, and drop images that
- * point at the author's local disk (pasted from Word).
- */
-function local_content($html)
-{
-    $html = preg_replace('#https?://(jobportal\.sapphireinfo\.net/induction-training-portal|induction\.sapphireinfo\.net)/uploads/#i', UPLOADS_URL, $html);
-    return preg_replace('#<img[^>]+src=["\']file:///[^>]*>#i', '', $html);
-}
+?>

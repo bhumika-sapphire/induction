@@ -1,0 +1,195 @@
+/*
+
+Darko Bunic
+http://www.redips.net/
+Mar, 2011.
+
+*/
+
+body{
+	font-family: arial;
+	/*margin: 0px;  for IE6 / IE7 */
+}
+
+
+/* drag container */
+#main_container {
+	margin: auto;
+	width: auto;
+}
+		/* container for the left table */
+		#main_container #left {
+			
+			height: 320px;
+			float: left;
+			margin-right: 20px;
+		}
+		/* container for the main table and message line below */
+		#main_container #right {
+			/* width: 675px; */
+			padding-left: auto;
+			padding-right: 0px;
+			/* align div to the right */
+			margin-left: auto;
+		}
+
+
+/* drag objects (DIV inside table cells) */
+.redips-drag {
+	cursor: move;
+	margin: auto;
+	z-index: 10;
+	color: #222;
+	text-align: center;
+	font-size: 12px; /* needed for cloned object */
+	opacity: 0.8;
+	filter: alpha(opacity=70);
+	/* without width, IE6/7 will not apply filter/opacity to the element ?! */
+	/* IE needs element layout */
+	width: 100px;
+	min-height: 30px;
+	line-height:1;
+	padding:4px 2px;
+
+	/* border */
+	border: 1px solid #555;
+	/* round corners */
+	border-radius: 3px;
+	-moz-border-radius: 3px; /* FF */
+}
+
+
+/* tables */
+div#redips-drag table {
+	background-color: #eee;
+	border-collapse: collapse;
+}
+		/* timetable */
+		div#drag #table2 {
+			/* align table to the right */
+			margin-left: auto;
+		}
+
+/* table cells */
+div#redips-drag td {
+	border-style: solid;
+	border-width: 1px;
+	border-color: white;
+	height: 40px;
+	text-align: center;
+	font-size: 10pt;
+	padding: 10 5px;
+	min-width:120px;
+}
+		/* overwrite border settings for left tables */
+		/* set all borders to 0px except border-bottom */
+		div#redips-drag #table1 td {
+			margin:auto;
+			border-width: 0px 0px 1px 0px;
+		}
+			/* styles for clone DIV elements in left table */
+			div#redips-drag #table1 div {
+			
+				margin:auto;
+			}
+			/* define styles for buttons */
+			div#redips-drag #table1 input {
+				float: right;
+				width: 15px;
+				height: 23px;
+				margin-right: 5px;
+				border-width: 1px;
+				/* round corners */
+				border-radius: 3px;
+				/* default visibility is hidden */
+				visibility: hidden;
+			}
+
+
+/* subject colors */
+.ar {
+	background-color: #AAC8E2;
+}
+.bi {
+	background-color: #E7D783;
+}
+.ch {
+	background-color: #E99AE6;
+}
+.en {
+	background-color: #C4AFFF;
+}
+.et {
+	background-color: #91DEC5;
+}
+.hi {
+	background-color: #CFE17F;
+}
+.it {
+	background-color: #E7BD83;
+}
+.ma {
+	background-color: #FFC5C2;
+}
+.ph {
+	background-color: #A5F09D;
+}
+
+
+/* blank cells (upper left corner) */
+.blank {
+	background-color: white;
+	
+}
+
+
+/* background color for lunch */
+.lunch {
+	color: #665;
+	background-color: #f8eeee;
+}
+
+
+/* trash cell */
+.redips-trash {
+	color: white;
+	background-color: #DE0017;
+}
+
+
+/* message line */
+#message {
+	color: white;
+	background-color: #aaa;
+	text-align: center;
+	margin-top: 10px;
+}
+
+
+/* dark cells (first column and table header) */
+.dark{
+	color: #444;
+	background-color: #e0e0e0;
+}
+#right .hour{
+	width:150px; 
+	
+}
+
+.button_container{
+	padding-top: 10px;
+	text-align: center;
+}
+
+		/* "Save" button */
+		.button_container input{
+			background-color: #000080;
+			color: white; 
+			border-width: 1px;
+			width: 60px;
+			padding: 5px;
+			border-radius:5px;
+		}
+		
+.question_tap{ margin-top:4px;}		
+.btn-info{min-width:120px;}

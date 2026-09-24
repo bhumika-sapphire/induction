@@ -1,17 +1,25 @@
-# Runtime data and user uploads (employee documents, training videos)
+# User uploads and runtime data
 /uploads/
 /uploads_1/
+/siteadmin/uploads/
 /temp/
+/cgi-bin/
 
-# Database dump contains personal data (PAN, Aadhaar, bank details)
+# Backups, archives, dumps
+*.zip
 *.sql
+*.bak
 
-# Server logs
+# Logs
 error_log
 *.log
 
-# Local settings with database credentials (copy includes/config.example.php)
+# Hosting files
+.ftpquota
+
+# Credentials: never commit
 /includes/config.php
+/includes/config_file.php
 
 # OS files
 Thumbs.db
