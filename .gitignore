@@ -1,0 +1,18 @@
+# Runtime data and user uploads (employee documents, training videos)
+/uploads/
+/uploads_1/
+/temp/
+
+# Database dump contains personal data (PAN, Aadhaar, bank details)
+*.sql
+
+# Server logs
+error_log
+*.log
+
+# Local settings with database credentials (copy includes/config.example.php)
+/includes/config.php
+
+# OS files
+Thumbs.db
+.DS_Store
