@@ -39,7 +39,7 @@
 
 	include_once(LIB_DIR.'adodb/adodb.inc.php');
 	
-	$conn = &ADONewConnection('mysqli');
+	$conn = ADONewConnection('mysqli');
 	$ADODB_COUNTRECS = true;
 	$conn_status=$conn->Connect(DB_HOST,DB_USER,DB_PASSWORD,DB_DATABASE);
 	$conn->Execute("set names 'utf8'"); 
