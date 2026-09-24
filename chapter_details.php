@@ -94,7 +94,7 @@ include_once '_header.php';
                         <div class="syllabus-view <?php if($ctr == 1){echo " first";} ?>">
                         	<div class="main-point active"><?php print $row['material_title']   ?></div>
                             <div class="point-list">
-							<p><?php print $row['material_text']   ?></p>
+							<p><?php print local_content($row['material_text'])   ?></p>
                             	
 								<?php 
 									if($row['material_file_type']=="Video")
