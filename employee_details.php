@@ -12,6 +12,13 @@
 	$userDetailsTable = "SELECT * FROM user_details WHERE user_id =".$user_id;
 	$execccc = $conn->Execute($userDetailsTable);
 	$values = $execccc->FetchRow();
+	// New joiners have no user_details row yet: show empty fields instead of PHP warnings
+	if(!$values)
+	{
+		$values = array_fill_keys(array('son_daughter_wife_of','dob','blood_group','present_address','permanent_address',
+			'contact_number','other_contact_number','pan_number','aadhar_number','bank_name','account_number','branch_name',
+			'ifsc_code','designation','department','date_of_joining','address_copy','pan_copy','adhar_copy','passbook_copy','profile_pic'), '');
+	}
 	
 	$_SESSION[SESSION_PREFIX.'pageViewed'][$page_id]="true";
 	
